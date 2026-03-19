@@ -26,6 +26,39 @@
 
 启动后即可看到游戏界面，并通过拖动控制英雄机。
 
+## 团队协作
+
+克隆仓库：
+
+```bash
+git clone https://github.com/hhh2210/Android_aircraftWar.git
+```
+
+分支约定：
+- `main` 分支保持可编译状态，不直接在 `main` 上开发
+- 开发新功能时从 `main` 创建功能分支，完成后合并回 `main`
+- 提交信息使用中文
+
+## 项目结构
+
+```
+app/src/main/java/edu/hitsz/
+├── MainActivity.java          # 入口 Activity
+├── application/
+│   ├── BaseGame.java          # SurfaceView 游戏主循环
+│   ├── EasyGame.java          # 简单模式
+│   ├── ImageManager.java      # 图片资源管理
+│   ├── Main.java              # 屏幕尺寸常量
+│   └── gamemode/              # 游戏模式（简单/普通/困难）
+├── aircraft/                  # 飞机实体（英雄机、敌机）
+├── basic/                     # 基础抽象类
+├── bullet/                    # 子弹
+├── prop/                      # 道具
+├── factory/                   # 工厂类
+├── strategy/                  # 射击策略
+└── observer/                  # 观察者模式
+```
+
 ## 主要代码位置
 
 - 入口 Activity：`app/src/main/java/edu/hitsz/MainActivity.java`
