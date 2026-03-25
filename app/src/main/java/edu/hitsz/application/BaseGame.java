@@ -21,6 +21,7 @@ import edu.hitsz.aircraft.EliteEnemy;
 import edu.hitsz.aircraft.ElitePlusEnemy;
 import edu.hitsz.aircraft.HeroAircraft;
 import edu.hitsz.aircraft.MobEnemy;
+import edu.hitsz.audio.AudioManager;
 import edu.hitsz.application.gamemode.AbstractGameMode;
 import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.factory.BloodPropFactory;
@@ -43,6 +44,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
 
     private final SurfaceHolder surfaceHolder;
     private final AbstractGameMode gameMode;
+    private final AudioManager audioManager;
     private final Paint hudPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint noticePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint overlayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -76,6 +78,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         surfaceHolder.addCallback(this);
         setFocusable(true);
         setKeepScreenOn(true);
+        audioManager = new AudioManager(context);
         initPaints();
         gameMode.startGame();
         applyGameModeSettings();
@@ -190,6 +193,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         if (heroAircraft.getHp() <= 0) {
             gameOver = true;
             heroAircraft.stopPropEffectTimer();
+            audioManager.stopBgm();
         }
     }
 
@@ -212,6 +216,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
             enemyAircrafts.add(factory.create(x, y, bossSpeed, 0, bossHp));
             bossExists = true;
             gameMode.onBossAppear();
+            audioManager.startBossBgm();
         }
 
         if (enemyAircrafts.size() >= enemyMaxNumber) {
@@ -279,6 +284,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
             if (!bullet.notValid() && heroAircraft.crash(bullet)) {
                 heroAircraft.decreaseHp(bullet.getPower());
                 bullet.vanish();
+                audioManager.playBulletHit();
             }
         }
 
@@ -293,6 +299,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
                 if (enemyAircraft.crash(bullet)) {
                     enemyAircraft.decreaseHp(bullet.getPower());
                     bullet.vanish();
+                    audioManager.playBulletHit();
                     if (enemyAircraft.notValid()) {
                         handleEnemyDestroyed(enemyAircraft);
                     }
@@ -322,6 +329,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
                         }
                     }
                     bombProp.activate(heroAircraft);
+                    audioManager.playBombExplosion();
                     score += bombProp.notifyObservers();
                 } else {
                     prop.activate(heroAircraft);
@@ -347,6 +355,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         } else if (enemyAircraft instanceof BossEnemy) {
             score += 100;
             bossExists = false;
+            audioManager.startGameBgm();
             int propCount = (int) (Math.random() * 3) + 1;
             for (int i = 0; i < propCount; i++) {
                 int offsetX = (int) (Math.random() * 60 - 30);
@@ -479,6 +488,13 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
             Main.WINDOW_HEIGHT = Math.max(getHeight(), Main.WINDOW_HEIGHT);
         }
         initializeGameIfNeeded();
+        if (!gameOver) {
+            if (bossExists) {
+                audioManager.startBossBgm();
+            } else {
+                audioManager.startGameBgm();
+            }
+        }
         running = true;
         renderThread = new Thread(this, "aircraft-war-loop");
         renderThread.start();
@@ -504,5 +520,27 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
                 Thread.currentThread().interrupt();
             }
         }
+        audioManager.release();
+    }
+
+    public void onHostPause() {
+        audioManager.pauseAll();
+    }
+
+    public void onHostResume() {
+        if (initialized && !gameOver) {
+            if (bossExists) {
+                audioManager.startBossBgm();
+            } else {
+                audioManager.startGameBgm();
+            }
+        }
+    }
+
+    public void releaseResources() {
+        if (heroAircraft != null) {
+            heroAircraft.stopPropEffectTimer();
+        }
+        audioManager.release();
     }
 }

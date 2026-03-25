@@ -5,8 +5,8 @@
 ## 项目说明
 
 - 课程：软件构造实践
-- 当前阶段：已完成实验二、实验三的主要要求
-- 目标：将原有 Windows/Swing 版本迁移到 Android，并补齐难度选择页面与页面跳转流程
+- 当前阶段：已完成实验二、实验三、实验四的主要要求
+- 目标：将原有 Windows/Swing 版本迁移到 Android，并逐步补齐课程实验要求中的界面、难度、音频等功能
 
 ## 已完成内容
 
@@ -20,6 +20,11 @@
 - 使用 `Intent` 从 `MainActivity` 跳转到 `GameActivity`
 - 在 `GameActivity` 中按难度参数加载对应的游戏场景
 - 补充了难度分发的本地单元测试和页面跳转相关的 Android 测试
+- 新增音乐开关，并使用 `SharedPreferences` 持久化音频设置
+- 封装独立音频管理类，统一管理背景音乐与音效播放
+- 使用 `MediaPlayer` 播放普通战斗 BGM 与 Boss 战 BGM
+- 使用 `SoundPool` 播放子弹命中、炸弹爆炸等短音效
+- 在 `res/raw` 中补充本地音频资源，完成实验四音频迁移
 
 ## 运行方式
 
@@ -28,7 +33,7 @@
 3. 选择一个 Android 模拟器或真机
 4. 点击 Run 运行应用
 
-启动后会先进入难度选择页面。点击 `Easy`、`Normal` 或 `Hard` 后进入对应游戏场景，并可通过拖动控制英雄机。
+启动后会先进入难度选择页面。可先通过右上角音乐开关控制音频开闭。点击 `Easy`、`Normal` 或 `Hard` 后进入对应游戏场景，并可通过拖动控制英雄机。
 
 ## 团队协作
 
@@ -50,6 +55,7 @@ app/src/main/java/edu/hitsz/
 ├── MainActivity.java          # 难度选择页
 ├── GameActivity.java          # 游戏承载页
 ├── GameDifficulty.java        # 难度参数与归一化工具
+├── audio/                     # 音频设置与音频管理
 ├── application/
 │   ├── BaseGame.java          # SurfaceView 游戏主循环
 │   ├── EasyGame.java          # 简单模式
@@ -67,14 +73,26 @@ app/src/main/java/edu/hitsz/
 └── observer/                  # 观察者模式
 ```
 
+资源目录中还包含：
+
+```text
+app/src/main/res/
+├── drawable/                  # 图片资源
+├── layout/                    # 页面布局
+└── raw/                       # BGM 与音效资源
+```
+
 ## 主要代码位置
 
 - 难度选择页：`app/src/main/java/edu/hitsz/MainActivity.java`
 - 游戏承载页：`app/src/main/java/edu/hitsz/GameActivity.java`
+- 音频管理：`app/src/main/java/edu/hitsz/audio/AudioManager.java`
+- 音频设置：`app/src/main/java/edu/hitsz/audio/AudioSettings.java`
 - SurfaceView 游戏页：`app/src/main/java/edu/hitsz/application/BaseGame.java`
 - 难度参数定义：`app/src/main/java/edu/hitsz/GameDifficulty.java`
 - 三种难度入口：`app/src/main/java/edu/hitsz/application/EasyGame.java`、`NormalGame.java`、`HardGame.java`
 - 图片资源管理：`app/src/main/java/edu/hitsz/application/ImageManager.java`
+- 音频资源目录：`app/src/main/res/raw`
 
 ## 构建验证
 
@@ -87,16 +105,16 @@ app/src/main/java/edu/hitsz/
 
 ## 与课程实验安排的对应关系
 
-根据当前三份实验 PDF，可对应为：
+根据当前实验进度，可对应为：
 
 - 实验二重点是代码迁移，并在 Android Studio 模拟器中运行展示游戏界面
 - 本仓库已完成实验二所需的核心迁移内容
 - 实验三重点是难度选择页面、按钮监听、`Intent` 页面跳转和数据传递
 - 本仓库已完成实验三所需的 XML 难度选择页与对应难度跳转逻辑
-- 排行榜、音效/背景音乐、网络功能仍属于后续实验阶段内容
+- 实验四重点是音乐开关、背景音乐与音效播放
+- 本仓库已完成实验四所需的音频管理类封装、BGM 播放和短音效接入
 
 ## 结合课程安排的后续方向
 
-- 实验四：补充音效与背景音乐迁移
 - 实验五：实现排行榜功能
 - 实验六：继续开发网络功能
