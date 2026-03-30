@@ -6,4 +6,7 @@
     <string name="difficulty_normal">Normal</string>
     <string name="difficulty_hard">Hard</string>
     <string name="music_switch_label">Music</string>
+    <string name="rank_title">排行榜</string>
+    <string name="rank_empty">暂无排行榜数据</string>
+    <string name="rank_delete">删除</string>
 </resources>

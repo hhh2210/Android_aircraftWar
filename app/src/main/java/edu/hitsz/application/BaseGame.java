@@ -6,6 +6,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.os.Handler;
+import android.os.Message;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -45,6 +47,8 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
     private final SurfaceHolder surfaceHolder;
     private final AbstractGameMode gameMode;
     private final AudioManager audioManager;
+    private final Handler activityHandler;
+    private final int gameOverMessageWhat;
     private final Paint hudPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint noticePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint overlayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -53,6 +57,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
     private volatile boolean running;
     private boolean initialized;
     private boolean gameOver;
+    private boolean gameOverMessageSent;
 
     private int backGroundTop;
     private int time;
@@ -71,9 +76,11 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
     private final List<BaseBullet> enemyBullets = new LinkedList<>();
     private final List<AbstractProp> props = new LinkedList<>();
 
-    public BaseGame(Context context, AbstractGameMode gameMode) {
+    public BaseGame(Context context, AbstractGameMode gameMode, Handler activityHandler, int gameOverMessageWhat) {
         super(context);
         this.gameMode = gameMode;
+        this.activityHandler = activityHandler;
+        this.gameOverMessageWhat = gameOverMessageWhat;
         surfaceHolder = getHolder();
         surfaceHolder.addCallback(this);
         setFocusable(true);
@@ -194,7 +201,19 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
             gameOver = true;
             heroAircraft.stopPropEffectTimer();
             audioManager.stopBgm();
+            dispatchGameOverMessage();
         }
+    }
+
+    private void dispatchGameOverMessage() {
+        if (activityHandler == null || gameOverMessageSent) {
+            return;
+        }
+        gameOverMessageSent = true;
+        Message message = Message.obtain();
+        message.what = gameOverMessageWhat;
+        message.arg1 = score;
+        activityHandler.sendMessage(message);
     }
 
     private boolean timeCountAndNewCycleJudge() {

@@ -21,4 +21,16 @@ public final class GameDifficulty {
         }
         return EASY;
     }
+
+    public static String toDisplayName(String difficulty) {
+        switch (normalize(difficulty)) {
+            case NORMAL:
+                return "Normal";
+            case HARD:
+                return "Hard";
+            case EASY:
+            default:
+                return "Easy";
+        }
+    }
 }

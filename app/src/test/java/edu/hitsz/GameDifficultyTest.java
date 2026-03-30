@@ -21,4 +21,11 @@ public class GameDifficultyTest {
     public void normalize_fallsBackToEasyForUnknownValue() {
         assertEquals(GameDifficulty.EASY, GameDifficulty.normalize("impossible"));
     }
+
+    @Test
+    public void toDisplayName_returnsExpectedLabels() {
+        assertEquals("Easy", GameDifficulty.toDisplayName(GameDifficulty.EASY));
+        assertEquals("Normal", GameDifficulty.toDisplayName(GameDifficulty.NORMAL));
+        assertEquals("Hard", GameDifficulty.toDisplayName(GameDifficulty.HARD));
+    }
 }
