@@ -66,6 +66,9 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
     private int enemyMaxNumber = 5;
     private int score;
     private boolean bossExists;
+    private boolean draggingHero;
+    private float heroDragOffsetX;
+    private float heroDragOffsetY;
 
     private String floatingNotice;
     private long floatingNoticeExpireAt;
@@ -109,16 +112,44 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         if (heroAircraft == null) {
             return true;
         }
-        int action = motionEvent.getAction();
-        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
-            float halfWidth = heroAircraft.getWidth() / 2f;
-            float halfHeight = heroAircraft.getHeight() / 2f;
-            float x = Math.max(halfWidth, Math.min(motionEvent.getX(), Main.WINDOW_WIDTH - halfWidth));
-            float y = Math.max(halfHeight, Math.min(motionEvent.getY(), Main.WINDOW_HEIGHT - halfHeight));
-            heroAircraft.setLocation(x, y);
-            return true;
+        switch (motionEvent.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                if (isTouchOnHero(motionEvent.getX(), motionEvent.getY())) {
+                    draggingHero = true;
+                    heroDragOffsetX = motionEvent.getX() - heroAircraft.getLocationX();
+                    heroDragOffsetY = motionEvent.getY() - heroAircraft.getLocationY();
+                }
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                if (draggingHero) {
+                    moveHeroTo(
+                            motionEvent.getX() - heroDragOffsetX,
+                            motionEvent.getY() - heroDragOffsetY
+                    );
+                }
+                return true;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                draggingHero = false;
+                return true;
+            default:
+                return false;
         }
-        return false;
+    }
+
+    private boolean isTouchOnHero(float touchX, float touchY) {
+        float halfWidth = heroAircraft.getWidth() / 2f;
+        float halfHeight = heroAircraft.getHeight() / 2f;
+        return Math.abs(touchX - heroAircraft.getLocationX()) <= halfWidth
+                && Math.abs(touchY - heroAircraft.getLocationY()) <= halfHeight;
+    }
+
+    private void moveHeroTo(float centerX, float centerY) {
+        float halfWidth = heroAircraft.getWidth() / 2f;
+        float halfHeight = heroAircraft.getHeight() / 2f;
+        float x = Math.max(halfWidth, Math.min(centerX, Main.WINDOW_WIDTH - halfWidth));
+        float y = Math.max(halfHeight, Math.min(centerY, Main.WINDOW_HEIGHT - halfHeight));
+        heroAircraft.setLocation(x, y);
     }
 
     private void initializeGameIfNeeded() {
@@ -137,6 +168,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         heroAircraft.setLocation(Main.WINDOW_WIDTH / 2.0, Main.WINDOW_HEIGHT - ImageManager.HERO_IMAGE.getHeight());
         heroAircraft.setStraightMode(1);
         heroAircraft.stopPropEffectTimer();
+        draggingHero = false;
         initialized = true;
     }
 
@@ -557,6 +589,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     public void releaseResources() {
+        draggingHero = false;
         if (heroAircraft != null) {
             heroAircraft.stopPropEffectTimer();
         }
