@@ -9,4 +9,9 @@
     <string name="rank_title">排行榜</string>
     <string name="rank_empty">暂无排行榜数据</string>
     <string name="rank_delete">删除</string>
+    <string name="rank_filter_all">全部</string>
+    <string name="rank_filter_easy">Easy</string>
+    <string name="rank_filter_normal">Normal</string>
+    <string name="rank_filter_hard">Hard</string>
+    <string name="rank_back_to_menu">返回难度选择</string>
 </resources>

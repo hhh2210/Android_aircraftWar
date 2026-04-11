@@ -1,6 +1,7 @@
 package edu.hitsz.rank;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 
 import edu.hitsz.GameDifficulty;
+import edu.hitsz.MainActivity;
 import edu.hitsz.R;
 
 public class RankActivity extends AppCompatActivity {
@@ -25,6 +27,14 @@ public class RankActivity extends AppCompatActivity {
     private ListView rankListView;
     private TextView emptyView;
     private RankAdapter rankAdapter;
+
+    private Button filterAll;
+    private Button filterEasy;
+    private Button filterNormal;
+    private Button filterHard;
+    private Button activeFilter;
+
+    private String currentDifficultyFilter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +47,26 @@ public class RankActivity extends AppCompatActivity {
         emptyView = findViewById(R.id.text_rank_empty);
         rankAdapter = new RankAdapter(this);
         rankListView.setAdapter(rankAdapter);
-        refreshRankList();
+
+        filterAll = findViewById(R.id.button_filter_all);
+        filterEasy = findViewById(R.id.button_filter_easy);
+        filterNormal = findViewById(R.id.button_filter_normal);
+        filterHard = findViewById(R.id.button_filter_hard);
+
+        filterAll.setOnClickListener(v -> applyFilter(null, filterAll));
+        filterEasy.setOnClickListener(v -> applyFilter(GameDifficulty.EASY, filterEasy));
+        filterNormal.setOnClickListener(v -> applyFilter(GameDifficulty.NORMAL, filterNormal));
+        filterHard.setOnClickListener(v -> applyFilter(GameDifficulty.HARD, filterHard));
+
+        Button backToMenu = findViewById(R.id.button_back_to_menu);
+        backToMenu.setOnClickListener(v -> {
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+        });
+
+        applyFilter(null, filterAll);
     }
 
     @Override
@@ -46,8 +75,27 @@ public class RankActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+    private void applyFilter(String difficulty, Button selected) {
+        currentDifficultyFilter = difficulty;
+        highlightFilter(selected);
+        refreshRankList();
+    }
+
+    private void highlightFilter(Button selected) {
+        if (activeFilter != null) {
+            activeFilter.setEnabled(true);
+        }
+        selected.setEnabled(false);
+        activeFilter = selected;
+    }
+
     private void refreshRankList() {
-        List<RankRecord> records = rankDbHelper.queryAllOrderByScoreDesc();
+        List<RankRecord> records;
+        if (currentDifficultyFilter == null) {
+            records = rankDbHelper.queryAllOrderByScoreDesc();
+        } else {
+            records = rankDbHelper.queryByDifficulty(currentDifficultyFilter);
+        }
         rankAdapter.setRecords(records);
         boolean hasRecords = !records.isEmpty();
         rankListView.setVisibility(hasRecords ? View.VISIBLE : View.GONE);

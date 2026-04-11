@@ -48,13 +48,24 @@ public class RankDbHelper extends SQLiteOpenHelper {
     }
 
     public List<RankRecord> queryAllOrderByScoreDesc() {
+        return queryInternal(null, null);
+    }
+
+    public List<RankRecord> queryByDifficulty(String difficulty) {
+        if (difficulty == null) {
+            return queryAllOrderByScoreDesc();
+        }
+        return queryInternal(COLUMN_DIFFICULTY + "=?", new String[]{difficulty});
+    }
+
+    private List<RankRecord> queryInternal(String selection, String[] selectionArgs) {
         List<RankRecord> records = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
         try (Cursor cursor = db.query(
                 TABLE_NAME,
                 new String[]{COLUMN_ID, COLUMN_SCORE, COLUMN_DIFFICULTY, COLUMN_PLAYED_AT},
-                null,
-                null,
+                selection,
+                selectionArgs,
                 null,
                 null,
                 COLUMN_SCORE + " DESC, " + COLUMN_PLAYED_AT + " DESC"
