@@ -58,18 +58,17 @@ public class ScatterShootStrategy implements ShootStrategy {
         this.isHero = isHero;
     }
     
+    private static final int SPAWN_OFFSET_Y = 15;
+
     @Override
     public List<BaseBullet> shoot(AbstractAircraft aircraft) {
         List<BaseBullet> res = new LinkedList<>();
         int x = aircraft.getLocationX();
-        int y = aircraft.getLocationY() + direction * 2;
+        int y = aircraft.getLocationY() + direction * SPAWN_OFFSET_Y;
         int speedY = aircraft.getSpeedY() + direction * 5;
-        
-        BaseBullet bullet;
-        
-        // 散射弹道：发射多颗子弹，呈扇形分布
+
         if (shootNum == 1) {
-            // 只有一颗子弹，直射
+            BaseBullet bullet;
             if (isHero) {
                 bullet = new HeroBullet(x, y, 0, speedY, power);
             } else {
@@ -77,12 +76,11 @@ public class ScatterShootStrategy implements ShootStrategy {
             }
             res.add(bullet);
         } else {
-            // 多颗子弹，扇形分布
             for (int i = 0; i < shootNum; i++) {
-                // 计算横向速度，形成扇形
                 int speedX = (i - shootNum / 2) * spreadSpeedX;
                 int bulletX = x + (i - shootNum / 2) * 10;
-                
+
+                BaseBullet bullet;
                 if (isHero) {
                     bullet = new HeroBullet(bulletX, y, speedX, speedY, power);
                 } else {
@@ -91,7 +89,7 @@ public class ScatterShootStrategy implements ShootStrategy {
                 res.add(bullet);
             }
         }
-        
+
         return res;
     }
     

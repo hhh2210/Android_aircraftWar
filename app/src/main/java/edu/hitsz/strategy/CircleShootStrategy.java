@@ -51,30 +51,35 @@ public class CircleShootStrategy implements ShootStrategy {
         this.isHero = isHero;
     }
     
+    private static final int SPAWN_OFFSET = 40;
+
     @Override
     public List<BaseBullet> shoot(AbstractAircraft aircraft) {
         List<BaseBullet> res = new LinkedList<>();
-        int x = aircraft.getLocationX();
-        int y = aircraft.getLocationY() + 20;  // 子弹从飞机下方发出
-        
-        // 环射弹道：发射N颗子弹，呈360度环形分布
-        double angleStep = 2 * Math.PI / bulletCount;  // 每颗子弹之间的角度差
-        
-        BaseBullet bullet;
+        int cx = aircraft.getLocationX();
+        int cy = aircraft.getLocationY();
+
+        double angleStep = 2 * Math.PI / bulletCount;
+
         for (int i = 0; i < bulletCount; i++) {
             double angle = i * angleStep;
-            // 计算每颗子弹的速度分量
-            int bulletSpeedX = (int) (bulletSpeed * Math.cos(angle));
-            int bulletSpeedY = (int) (bulletSpeed * Math.sin(angle));
-            
+            double cosA = Math.cos(angle);
+            double sinA = Math.sin(angle);
+
+            int bulletSpeedX = (int) (bulletSpeed * cosA);
+            int bulletSpeedY = (int) (bulletSpeed * sinA);
+            int spawnX = cx + (int) (SPAWN_OFFSET * cosA);
+            int spawnY = cy + (int) (SPAWN_OFFSET * sinA);
+
+            BaseBullet bullet;
             if (isHero) {
-                bullet = new HeroBullet(x, y, bulletSpeedX, bulletSpeedY, power);
+                bullet = new HeroBullet(spawnX, spawnY, bulletSpeedX, bulletSpeedY, power);
             } else {
-                bullet = new EnemyBullet(x, y, bulletSpeedX, bulletSpeedY, power);
+                bullet = new EnemyBullet(spawnX, spawnY, bulletSpeedX, bulletSpeedY, power);
             }
             res.add(bullet);
         }
-        
+
         return res;
     }
     
