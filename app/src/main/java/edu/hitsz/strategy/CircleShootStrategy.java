@@ -16,6 +16,8 @@ import java.util.List;
  * @author hitsz
  */
 public class CircleShootStrategy implements ShootStrategy {
+    private static final int HERO_MIN_BULLET_SPEED = 16;
+    private static final int ENEMY_MIN_BULLET_SPEED = 10;
     
     /**
      * 子弹发射数量
@@ -58,6 +60,7 @@ public class CircleShootStrategy implements ShootStrategy {
         List<BaseBullet> res = new LinkedList<>();
         int cx = aircraft.getLocationX();
         int cy = aircraft.getLocationY();
+        int actualBulletSpeed = Math.max(bulletSpeed, isHero ? HERO_MIN_BULLET_SPEED : ENEMY_MIN_BULLET_SPEED);
 
         double angleStep = 2 * Math.PI / bulletCount;
 
@@ -66,8 +69,8 @@ public class CircleShootStrategy implements ShootStrategy {
             double cosA = Math.cos(angle);
             double sinA = Math.sin(angle);
 
-            int bulletSpeedX = (int) (bulletSpeed * cosA);
-            int bulletSpeedY = (int) (bulletSpeed * sinA);
+            int bulletSpeedX = (int) (actualBulletSpeed * cosA);
+            int bulletSpeedY = (int) (actualBulletSpeed * sinA);
             int spawnX = cx + (int) (SPAWN_OFFSET * cosA);
             int spawnY = cy + (int) (SPAWN_OFFSET * sinA);
 
@@ -97,4 +100,3 @@ public class CircleShootStrategy implements ShootStrategy {
         this.bulletCount = bulletCount;
     }
 }
-

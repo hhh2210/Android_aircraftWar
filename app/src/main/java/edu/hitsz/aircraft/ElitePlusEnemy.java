@@ -14,6 +14,7 @@ import edu.hitsz.strategy.ScatterShootStrategy;
  * - 坠毁掉落<=1个道具
  */
 public class ElitePlusEnemy extends AbstractAircraft implements BombObserver {
+    private static final int SCATTER_SPREAD_SPEED = 3;
 
     /**
      * 子弹伤害
@@ -37,8 +38,7 @@ public class ElitePlusEnemy extends AbstractAircraft implements BombObserver {
 
     public ElitePlusEnemy(int locationX, int locationY, int speedX, int speedY, int hp) {
         super(locationX, locationY, speedX, speedY, hp);
-        // 设置散射策略：发射3颗子弹，向下，横向扩散速度为2
-        this.setShootStrategy(new ScatterShootStrategy(3, power, direction, 2, false));
+        this.setShootStrategy(new ScatterShootStrategy(3, power, direction, SCATTER_SPREAD_SPEED, false));
     }
 
     @Override

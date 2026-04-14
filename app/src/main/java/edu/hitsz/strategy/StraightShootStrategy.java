@@ -16,6 +16,11 @@ import java.util.List;
  * @author hitsz
  */
 public class StraightShootStrategy implements ShootStrategy {
+    private static final int HERO_BULLET_SPEED = 18;
+    private static final int ENEMY_BULLET_SPEED = 10;
+    private static final int HERO_SPAWN_OFFSET_Y = 32;
+    private static final int ENEMY_SPAWN_OFFSET_Y = 24;
+    private static final int MULTI_BULLET_SPACING = 14;
     
     /**
      * 子弹发射数量
@@ -55,15 +60,15 @@ public class StraightShootStrategy implements ShootStrategy {
     public List<BaseBullet> shoot(AbstractAircraft aircraft) {
         List<BaseBullet> res = new LinkedList<>();
         int x = aircraft.getLocationX();
-        int y = aircraft.getLocationY() + direction * 2;
+        int spawnOffsetY = isHero ? HERO_SPAWN_OFFSET_Y : ENEMY_SPAWN_OFFSET_Y;
+        int y = aircraft.getLocationY() + direction * spawnOffsetY;
         int speedX = 0;
-        int speedY = aircraft.getSpeedY() + direction * 5;
+        int bulletSpeed = isHero ? HERO_BULLET_SPEED : ENEMY_BULLET_SPEED;
+        int speedY = aircraft.getSpeedY() + direction * bulletSpeed;
         
         BaseBullet bullet;
         for (int i = 0; i < shootNum; i++) {
-            // 子弹发射位置相对飞机位置向前偏移
-            // 多个子弹横向分散
-            int bulletX = x + (i * 2 - shootNum + 1) * 10;
+            int bulletX = x + (i * 2 - shootNum + 1) * MULTI_BULLET_SPACING;
             
             if (isHero) {
                 bullet = new HeroBullet(bulletX, y, speedX, speedY, power);

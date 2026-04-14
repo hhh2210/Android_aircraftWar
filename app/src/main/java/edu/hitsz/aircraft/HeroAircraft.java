@@ -12,6 +12,8 @@ import java.util.concurrent.ScheduledFuture;
  * 英雄飞机，游戏玩家操控 (单例模式)
  */
 public class HeroAircraft extends AbstractAircraft {
+    private static final int HERO_SCATTER_SPREAD_SPEED = 3;
+    private static final int HERO_CIRCLE_BULLET_SPEED = 16;
 
     private static volatile HeroAircraft instance; // 唯一实例
 
@@ -97,10 +99,10 @@ public class HeroAircraft extends AbstractAircraft {
             this.setShootStrategy(new StraightShootStrategy(strategy.getShootNum(), this.power, direction, true));
         } else if (this.getShootStrategy() instanceof ScatterShootStrategy) {
             ScatterShootStrategy strategy = (ScatterShootStrategy) this.getShootStrategy();
-            this.setShootStrategy(new ScatterShootStrategy(strategy.getShootNum(), this.power, direction, 2, true));
+            this.setShootStrategy(new ScatterShootStrategy(strategy.getShootNum(), this.power, direction, HERO_SCATTER_SPREAD_SPEED, true));
         } else if (this.getShootStrategy() instanceof CircleShootStrategy) {
             CircleShootStrategy strategy = (CircleShootStrategy) this.getShootStrategy();
-            this.setShootStrategy(new CircleShootStrategy(strategy.getBulletCount(), this.power, 5, true));
+            this.setShootStrategy(new CircleShootStrategy(strategy.getBulletCount(), this.power, HERO_CIRCLE_BULLET_SPEED, true));
         }
     }
 
@@ -109,7 +111,7 @@ public class HeroAircraft extends AbstractAircraft {
      * @param shootNum 子弹数量
      */
     public void setScatterMode(int shootNum) {
-        this.setShootStrategy(new ScatterShootStrategy(shootNum, power, direction, 2, true));
+        this.setShootStrategy(new ScatterShootStrategy(shootNum, power, direction, HERO_SCATTER_SPREAD_SPEED, true));
     }
 
     /**
@@ -117,7 +119,7 @@ public class HeroAircraft extends AbstractAircraft {
      * @param bulletCount 子弹数量
      */
     public void setCircleMode(int bulletCount) {
-        this.setShootStrategy(new CircleShootStrategy(bulletCount, power, 5, true));
+        this.setShootStrategy(new CircleShootStrategy(bulletCount, power, HERO_CIRCLE_BULLET_SPEED, true));
     }
 
     /**

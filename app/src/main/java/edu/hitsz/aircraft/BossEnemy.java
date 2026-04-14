@@ -14,6 +14,7 @@ import edu.hitsz.strategy.CircleShootStrategy;
  * - 坠毁掉落<=3个道具
  */
 public class BossEnemy extends AbstractAircraft implements BombObserver {
+    private static final int BOSS_BULLET_SPEED = 10;
 
     /**
      * 子弹伤害
@@ -31,8 +32,7 @@ public class BossEnemy extends AbstractAircraft implements BombObserver {
      */
     public BossEnemy(int locationX, int locationY, int speedX, int speedY, int hp) {
         super(locationX, locationY, speedX, 0, hp);  // Boss不向下移动，speedY设为0
-        // 设置环射策略：发射12颗子弹，速度为5
-        this.setShootStrategy(new CircleShootStrategy(12, power, 5, false));
+        this.setShootStrategy(new CircleShootStrategy(12, power, BOSS_BULLET_SPEED, false));
     }
 
     @Override

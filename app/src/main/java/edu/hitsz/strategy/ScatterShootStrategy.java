@@ -16,6 +16,11 @@ import java.util.List;
  * @author hitsz
  */
 public class ScatterShootStrategy implements ShootStrategy {
+    private static final int HERO_BULLET_SPEED = 18;
+    private static final int ENEMY_BULLET_SPEED = 10;
+    private static final int HERO_SPAWN_OFFSET_Y = 30;
+    private static final int ENEMY_SPAWN_OFFSET_Y = 22;
+    private static final int MULTI_BULLET_SPACING = 14;
     
     /**
      * 子弹发射数量
@@ -58,14 +63,14 @@ public class ScatterShootStrategy implements ShootStrategy {
         this.isHero = isHero;
     }
     
-    private static final int SPAWN_OFFSET_Y = 15;
-
     @Override
     public List<BaseBullet> shoot(AbstractAircraft aircraft) {
         List<BaseBullet> res = new LinkedList<>();
         int x = aircraft.getLocationX();
-        int y = aircraft.getLocationY() + direction * SPAWN_OFFSET_Y;
-        int speedY = aircraft.getSpeedY() + direction * 5;
+        int spawnOffsetY = isHero ? HERO_SPAWN_OFFSET_Y : ENEMY_SPAWN_OFFSET_Y;
+        int y = aircraft.getLocationY() + direction * spawnOffsetY;
+        int bulletSpeed = isHero ? HERO_BULLET_SPEED : ENEMY_BULLET_SPEED;
+        int speedY = aircraft.getSpeedY() + direction * bulletSpeed;
 
         if (shootNum == 1) {
             BaseBullet bullet;
@@ -78,7 +83,7 @@ public class ScatterShootStrategy implements ShootStrategy {
         } else {
             for (int i = 0; i < shootNum; i++) {
                 int speedX = (i - shootNum / 2) * spreadSpeedX;
-                int bulletX = x + (i - shootNum / 2) * 10;
+                int bulletX = x + (i - shootNum / 2) * MULTI_BULLET_SPACING;
 
                 BaseBullet bullet;
                 if (isHero) {
@@ -107,4 +112,3 @@ public class ScatterShootStrategy implements ShootStrategy {
         this.shootNum = shootNum;
     }
 }
-

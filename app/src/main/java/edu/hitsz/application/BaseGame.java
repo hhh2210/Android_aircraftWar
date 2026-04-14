@@ -43,6 +43,9 @@ import edu.hitsz.prop.BombProp;
 public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Runnable {
 
     private static final int FRAME_INTERVAL = 40;
+    private static final int HERO_SHOOT_INTERVAL = 160;
+    private static final int MIN_ENEMY_SHOOT_INTERVAL = 260;
+    private static final int ENEMY_SHOOT_INTERVAL_OFFSET = 120;
 
     private final SurfaceHolder surfaceHolder;
     private final AbstractGameMode gameMode;
@@ -62,7 +65,10 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
     private int backGroundTop;
     private int time;
     private int cycleTime;
+    private int heroShootCycleTime;
+    private int enemyShootCycleTime;
     private int cycleDuration = 600;
+    private int enemyShootInterval = 480;
     private int enemyMaxNumber = 5;
     private int score;
     private boolean bossExists;
@@ -89,6 +95,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         setFocusable(true);
         setKeepScreenOn(true);
         audioManager = new AudioManager(context);
+        audioManager.preloadEffects();
         initPaints();
         gameMode.startGame();
         applyGameModeSettings();
@@ -175,6 +182,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
     private void applyGameModeSettings() {
         enemyMaxNumber = gameMode.getMaxEnemyCount();
         cycleDuration = gameMode.getEnemySpawnInterval();
+        enemyShootInterval = Math.max(MIN_ENEMY_SHOOT_INTERVAL, cycleDuration - ENEMY_SHOOT_INTERVAL_OFFSET);
         String mapConfig = gameMode.getMapConfig();
         if (mapConfig.contains("bg2")) {
             ImageManager.BACKGROUND_IMAGE = ImageManager.BG2_IMAGE;
@@ -214,6 +222,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         time += FRAME_INTERVAL;
         gameMode.updateDifficultyOverTime(score, time);
         cycleDuration = gameMode.getEnemySpawnInterval();
+        enemyShootInterval = Math.max(MIN_ENEMY_SHOOT_INTERVAL, cycleDuration - ENEMY_SHOOT_INTERVAL_OFFSET);
         String notice = gameMode.pollDifficultyNotice();
         if (notice != null && !notice.isEmpty()) {
             showTemporaryNotice(notice, 3000);
@@ -221,7 +230,14 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
 
         if (timeCountAndNewCycleJudge()) {
             spawnEnemies();
-            shootAction();
+        }
+
+        if (heroTimeCountAndNewCycleJudge()) {
+            heroShootAction();
+        }
+
+        if (enemyTimeCountAndNewCycleJudge()) {
+            enemyShootAction();
         }
 
         bulletsMoveAction();
@@ -252,6 +268,24 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         cycleTime += FRAME_INTERVAL;
         if (cycleTime >= cycleDuration) {
             cycleTime %= cycleDuration;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean heroTimeCountAndNewCycleJudge() {
+        heroShootCycleTime += FRAME_INTERVAL;
+        if (heroShootCycleTime >= HERO_SHOOT_INTERVAL) {
+            heroShootCycleTime %= HERO_SHOOT_INTERVAL;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean enemyTimeCountAndNewCycleJudge() {
+        enemyShootCycleTime += FRAME_INTERVAL;
+        if (enemyShootCycleTime >= enemyShootInterval) {
+            enemyShootCycleTime %= enemyShootInterval;
             return true;
         }
         return false;
@@ -305,10 +339,13 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         return (int) (Math.random() * Main.WINDOW_HEIGHT * 0.08);
     }
 
-    private void shootAction() {
+    private void enemyShootAction() {
         for (AbstractAircraft enemyAircraft : enemyAircrafts) {
             enemyBullets.addAll(enemyAircraft.shoot());
         }
+    }
+
+    private void heroShootAction() {
         heroBullets.addAll(heroAircraft.shoot());
     }
 
@@ -539,6 +576,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
             Main.WINDOW_HEIGHT = Math.max(getHeight(), Main.WINDOW_HEIGHT);
         }
         initializeGameIfNeeded();
+        audioManager.preloadEffects();
         if (!gameOver) {
             if (bossExists) {
                 audioManager.startBossBgm();

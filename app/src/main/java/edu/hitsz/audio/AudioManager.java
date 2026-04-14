@@ -24,6 +24,7 @@ public class AudioManager {
 
     public AudioManager(Context context) {
         this.appContext = context.getApplicationContext();
+        preloadEffects();
     }
 
     public void startGameBgm() {
@@ -66,6 +67,10 @@ public class AudioManager {
 
     public void playBombExplosion() {
         playEffect(ensureSoundPoolLoaded().bombExplosionSoundId);
+    }
+
+    public void preloadEffects() {
+        ensureSoundPoolLoaded();
     }
 
     public void release() {
