@@ -5,7 +5,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.text.InputType;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.text.SimpleDateFormat;
@@ -82,10 +86,38 @@ public class GameActivity extends AppCompatActivity {
             return true;
         }
         int score = message.arg1;
-        rankDbHelper.insert(new RankRecord(score, currentDifficulty, getCurrentTimestamp()));
-        startActivity(new Intent(this, RankActivity.class));
-        finish();
+        showUsernameDialog(score);
         return true;
+    }
+
+    private void showUsernameDialog(int score) {
+        EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setHint(R.string.dialog_username_hint);
+        input.setSingleLine(true);
+
+        FrameLayout container = new FrameLayout(this);
+        int paddingPx = (int) (20 * getResources().getDisplayMetrics().density);
+        container.setPadding(paddingPx, 0, paddingPx, 0);
+        container.addView(input);
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_username_title)
+                .setMessage(String.format(Locale.getDefault(),
+                        getString(R.string.dialog_username_message), score))
+                .setView(container)
+                .setCancelable(false)
+                .setPositiveButton(R.string.dialog_username_confirm, (dialog, which) -> {
+                    String username = input.getText().toString().trim();
+                    if (username.isEmpty()) {
+                        username = getString(R.string.dialog_username_default);
+                    }
+                    rankDbHelper.insert(new RankRecord(score, currentDifficulty,
+                            getCurrentTimestamp(), username));
+                    startActivity(new Intent(this, RankActivity.class));
+                    finish();
+                })
+                .show();
     }
 
     private String normalizeDifficulty(String difficulty) {

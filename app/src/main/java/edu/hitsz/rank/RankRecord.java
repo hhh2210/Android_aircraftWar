@@ -7,16 +7,22 @@ public class RankRecord {
     private final int score;
     private final String difficulty;
     private final String playedAt;
+    private final String username;
 
     public RankRecord(int score, String difficulty, String playedAt) {
-        this(0L, score, difficulty, playedAt);
+        this(0L, score, difficulty, playedAt, "");
     }
 
-    public RankRecord(long id, int score, String difficulty, String playedAt) {
+    public RankRecord(int score, String difficulty, String playedAt, String username) {
+        this(0L, score, difficulty, playedAt, username);
+    }
+
+    public RankRecord(long id, int score, String difficulty, String playedAt, String username) {
         this.id = id;
         this.score = score;
         this.difficulty = GameDifficulty.normalize(difficulty);
         this.playedAt = playedAt;
+        this.username = username != null ? username : "";
     }
 
     public long getId() {
@@ -33,5 +39,9 @@ public class RankRecord {
 
     public String getPlayedAt() {
         return playedAt;
+    }
+
+    public String getUsername() {
+        return username;
     }
 }

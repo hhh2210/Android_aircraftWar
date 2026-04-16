@@ -2,11 +2,13 @@ package edu.hitsz;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
 import edu.hitsz.audio.AudioSettings;
+import edu.hitsz.rank.RankActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -16,9 +18,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         initAudioSwitch();
+        initModeSelection();
         findViewById(R.id.button_easy).setOnClickListener(view -> launchGame(GameDifficulty.EASY));
         findViewById(R.id.button_normal).setOnClickListener(view -> launchGame(GameDifficulty.NORMAL));
         findViewById(R.id.button_hard).setOnClickListener(view -> launchGame(GameDifficulty.HARD));
+        findViewById(R.id.button_rank).setOnClickListener(view ->
+                startActivity(new Intent(this, RankActivity.class)));
     }
 
     private void initAudioSwitch() {
@@ -27,6 +32,14 @@ public class MainActivity extends AppCompatActivity {
         audioSwitch.setOnCheckedChangeListener((buttonView, isChecked) ->
                 AudioSettings.setAudioEnabled(this, isChecked)
         );
+    }
+
+    private void initModeSelection() {
+        findViewById(R.id.mode_offline).setOnClickListener(v -> {
+            // already in offline/single-player mode, no action needed
+        });
+        findViewById(R.id.mode_online).setOnClickListener(v ->
+                Toast.makeText(this, R.string.mode_online_unavailable, Toast.LENGTH_SHORT).show());
     }
 
     private void launchGame(String difficulty) {

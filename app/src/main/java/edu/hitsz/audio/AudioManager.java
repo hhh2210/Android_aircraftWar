@@ -11,7 +11,7 @@ public class AudioManager {
 
     private static final float DEFAULT_VOLUME = 0.6f;
     private static final int MAX_SOUND_STREAMS = 6;
-    private static final int TOTAL_EFFECTS = 5;
+    private static final int TOTAL_EFFECTS = 4;
 
     private final Context appContext;
 

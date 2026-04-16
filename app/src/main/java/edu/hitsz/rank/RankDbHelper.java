@@ -12,13 +12,14 @@ import java.util.List;
 public class RankDbHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "rank.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
 
     private static final String TABLE_NAME = "rank_records";
     private static final String COLUMN_ID = "id";
     private static final String COLUMN_SCORE = "score";
     private static final String COLUMN_DIFFICULTY = "difficulty";
     private static final String COLUMN_PLAYED_AT = "played_at";
+    private static final String COLUMN_USERNAME = "username";
 
     public RankDbHelper(Context context) {
         super(context.getApplicationContext(), DB_NAME, null, DB_VERSION);
@@ -30,12 +31,17 @@ public class RankDbHelper extends SQLiteOpenHelper {
                 + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + COLUMN_SCORE + " INTEGER NOT NULL, "
                 + COLUMN_DIFFICULTY + " TEXT NOT NULL, "
-                + COLUMN_PLAYED_AT + " TEXT NOT NULL"
+                + COLUMN_PLAYED_AT + " TEXT NOT NULL, "
+                + COLUMN_USERNAME + " TEXT NOT NULL DEFAULT ''"
                 + ");");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE " + TABLE_NAME
+                    + " ADD COLUMN " + COLUMN_USERNAME + " TEXT NOT NULL DEFAULT ''");
+        }
     }
 
     public long insert(RankRecord record) {
@@ -44,6 +50,7 @@ public class RankDbHelper extends SQLiteOpenHelper {
         values.put(COLUMN_SCORE, record.getScore());
         values.put(COLUMN_DIFFICULTY, record.getDifficulty());
         values.put(COLUMN_PLAYED_AT, record.getPlayedAt());
+        values.put(COLUMN_USERNAME, record.getUsername());
         return db.insert(TABLE_NAME, null, values);
     }
 
@@ -63,7 +70,7 @@ public class RankDbHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = getReadableDatabase();
         try (Cursor cursor = db.query(
                 TABLE_NAME,
-                new String[]{COLUMN_ID, COLUMN_SCORE, COLUMN_DIFFICULTY, COLUMN_PLAYED_AT},
+                new String[]{COLUMN_ID, COLUMN_SCORE, COLUMN_DIFFICULTY, COLUMN_PLAYED_AT, COLUMN_USERNAME},
                 selection,
                 selectionArgs,
                 null,
@@ -75,7 +82,8 @@ public class RankDbHelper extends SQLiteOpenHelper {
                         cursor.getLong(0),
                         cursor.getInt(1),
                         cursor.getString(2),
-                        cursor.getString(3)
+                        cursor.getString(3),
+                        cursor.getString(4)
                 ));
             }
         }

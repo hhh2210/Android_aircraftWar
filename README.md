@@ -25,6 +25,9 @@
 - 使用 `MediaPlayer` 播放普通战斗 BGM 与 Boss 战 BGM
 - 使用 `SoundPool` 播放子弹命中、炸弹爆炸等短音效
 - 在 `res/raw` 中补充本地音频资源，完成实验四音频迁移
+- 首页新增联机/单机模式选择 icon（联机模式暂显示"未开放"提示）
+- 首页新增排行榜入口按钮，可直接进入排行榜页面
+- 游戏结束后弹出用户名输入对话框，用户名存入排行榜数据库并在排行榜中展示
 
 ## 运行方式
 
@@ -52,7 +55,7 @@ git clone https://github.com/hhh2210/Android_aircraftWar.git
 
 ```
 app/src/main/java/edu/hitsz/
-├── MainActivity.java          # 难度选择页
+├── MainActivity.java          # 首页（模式选择、难度选择、排行榜入口）
 ├── GameActivity.java          # 游戏承载页
 ├── GameDifficulty.java        # 难度参数与归一化工具
 ├── audio/                     # 音频设置与音频管理
@@ -69,6 +72,7 @@ app/src/main/java/edu/hitsz/
 ├── bullet/                    # 子弹
 ├── prop/                      # 道具
 ├── factory/                   # 工厂类
+├── rank/                      # 排行榜（数据库、记录模型、排行榜页面）
 ├── strategy/                  # 射击策略
 └── observer/                  # 观察者模式
 ```
@@ -115,6 +119,8 @@ app/src/main/res/
 - 本仓库已完成实验四所需的音频管理类封装、BGM 播放和短音效接入
 
 ## 结合课程安排的后续方向
-
+[x] 开屏界面的联机单机选择的两个 icon
+[x] 游戏结束之后输入用户名称，储存 username 并呈现在排行榜上
+[x] 排行榜可以首页进入
 - 实验五：实现排行榜功能
 - 实验六：继续开发网络功能

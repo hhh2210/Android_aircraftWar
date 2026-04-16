@@ -14,4 +14,13 @@
     <string name="rank_filter_normal">Normal</string>
     <string name="rank_filter_hard">Hard</string>
     <string name="rank_back_to_menu">返回难度选择</string>
+    <string name="mode_offline">单机模式</string>
+    <string name="mode_online">联机模式</string>
+    <string name="mode_online_unavailable">联机模式暂未开放</string>
+    <string name="button_rank">排行榜</string>
+    <string name="dialog_username_title">游戏结束</string>
+    <string name="dialog_username_message">得分：%d\n请输入您的用户名：</string>
+    <string name="dialog_username_hint">用户名</string>
+    <string name="dialog_username_confirm">确认</string>
+    <string name="dialog_username_default">无名玩家</string>
 </resources>

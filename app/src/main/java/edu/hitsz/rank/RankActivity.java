@@ -143,9 +143,11 @@ public class RankActivity extends AppCompatActivity {
             RankRecord record = getItem(position);
             holder.rankText.setText(String.format(Locale.getDefault(), "#%d", position + 1));
             holder.scoreText.setText(String.format(Locale.getDefault(), "分数：%d", record.getScore()));
+            String usernameDisplay = record.getUsername().isEmpty() ? "" : "玩家：" + record.getUsername() + "\n";
             holder.metaText.setText(String.format(
                     Locale.getDefault(),
-                    "难度：%s\n时间：%s",
+                    "%s难度：%s\n时间：%s",
+                    usernameDisplay,
                     GameDifficulty.toDisplayName(record.getDifficulty()),
                     record.getPlayedAt()
             ));
