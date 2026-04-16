@@ -249,6 +249,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
             gameOver = true;
             heroAircraft.stopPropEffectTimer();
             audioManager.stopBgm();
+            audioManager.playGameOver();
             dispatchGameOverMessage();
         }
     }
@@ -404,6 +405,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
 
         for (AbstractProp prop : props) {
             if (!prop.notValid() && (heroAircraft.crash(prop) || prop.crash(heroAircraft))) {
+                audioManager.playGetSupply();
                 if (prop instanceof BombProp) {
                     BombProp bombProp = (BombProp) prop;
                     for (AbstractAircraft enemyAircraft : enemyAircrafts) {
