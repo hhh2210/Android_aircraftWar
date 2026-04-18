@@ -12,7 +12,8 @@ import static org.junit.Assert.assertTrue;
 
 public class ScatterShootStrategyTest {
 
-    private static final int SPAWN_OFFSET_Y = 15;
+    private static final int HERO_SPAWN_OFFSET_Y = 30;
+    private static final int ENEMY_SPAWN_OFFSET_Y = 22;
 
     private static class StubAircraft extends AbstractAircraft {
         StubAircraft(int x, int y) {
@@ -32,7 +33,7 @@ public class ScatterShootStrategyTest {
         List<BaseBullet> bullets = strategy.shoot(new StubAircraft(cx, cy));
 
         assertEquals(3, bullets.size());
-        int expectedY = cy + (-1) * SPAWN_OFFSET_Y;
+        int expectedY = cy - HERO_SPAWN_OFFSET_Y;
         for (BaseBullet b : bullets) {
             assertEquals("Bullet Y should be offset above aircraft", expectedY, b.getLocationY());
             assertTrue("Hero bullet should fly upward", b.getSpeedY() < 0);
@@ -47,7 +48,7 @@ public class ScatterShootStrategyTest {
         List<BaseBullet> bullets = strategy.shoot(new StubAircraft(cx, cy));
 
         assertEquals(3, bullets.size());
-        int expectedY = cy + 1 * SPAWN_OFFSET_Y;
+        int expectedY = cy + ENEMY_SPAWN_OFFSET_Y;
         for (BaseBullet b : bullets) {
             assertEquals("Bullet Y should be offset below aircraft", expectedY, b.getLocationY());
         }

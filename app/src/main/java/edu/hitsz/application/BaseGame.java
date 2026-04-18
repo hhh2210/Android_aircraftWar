@@ -78,6 +78,12 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
 
     private String floatingNotice;
     private long floatingNoticeExpireAt;
+    private volatile boolean onlineHudEnabled;
+    private volatile int opponentScore;
+    private volatile boolean opponentAlive;
+    private volatile String onlineStatusText;
+    private volatile ScoreSyncListener scoreSyncListener;
+    private int lastReportedScore;
 
     private HeroAircraft heroAircraft;
     private final List<AbstractAircraft> enemyAircrafts = new LinkedList<>();
@@ -244,6 +250,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         aircraftsMoveAction();
         crashCheckAction();
         postProcessAction();
+        publishScoreIfNeeded();
 
         if (heroAircraft.getHp() <= 0) {
             gameOver = true;
@@ -486,6 +493,14 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         floatingNoticeExpireAt = System.currentTimeMillis() + durationMs;
     }
 
+    private void publishScoreIfNeeded() {
+        if (!onlineHudEnabled || scoreSyncListener == null || score == lastReportedScore) {
+            return;
+        }
+        lastReportedScore = score;
+        scoreSyncListener.onScoreChanged(score);
+    }
+
     private void drawFrame() {
         Canvas canvas = surfaceHolder.lockCanvas();
         if (canvas == null) {
@@ -549,6 +564,13 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         canvas.drawText("SCORE: " + score, 24f, 64f, hudPaint);
         canvas.drawText("LIFE: " + heroAircraft.getHp(), 24f, 124f, hudPaint);
         canvas.drawText(gameMode.getClass().getSimpleName().replace("Mode", ""), 24f, 184f, hudPaint);
+        if (onlineHudEnabled) {
+            canvas.drawText(getResources().getString(edu.hitsz.R.string.online_label_opponent) + ": " + opponentScore,
+                    24f, 244f, hudPaint);
+            String statusText = onlineStatusText == null ? "" : onlineStatusText;
+            canvas.drawText(getResources().getString(edu.hitsz.R.string.online_label_status) + ": " + statusText,
+                    24f, 304f, hudPaint);
+        }
     }
 
     private void drawFloatingNotice(Canvas canvas) {
@@ -634,5 +656,29 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
             heroAircraft.stopPropEffectTimer();
         }
         audioManager.release();
+    }
+
+    public void attachOnlineScoreSyncListener(ScoreSyncListener listener) {
+        onlineHudEnabled = true;
+        opponentAlive = false;
+        onlineStatusText = "";
+        scoreSyncListener = listener;
+        lastReportedScore = score;
+    }
+
+    public void updateOnlineState(int latestOpponentScore, boolean latestOpponentAlive, String statusText) {
+        onlineHudEnabled = true;
+        opponentScore = latestOpponentScore;
+        opponentAlive = latestOpponentAlive;
+        onlineStatusText = statusText == null ? "" : statusText;
+    }
+
+    public void updateOnlineStatus(String statusText) {
+        onlineHudEnabled = true;
+        onlineStatusText = statusText == null ? "" : statusText;
+    }
+
+    public interface ScoreSyncListener {
+        void onScoreChanged(int score);
     }
 }
