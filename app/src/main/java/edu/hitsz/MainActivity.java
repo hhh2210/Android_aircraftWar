@@ -12,6 +12,8 @@ import edu.hitsz.rank.RankActivity;
 
 public class MainActivity extends AppCompatActivity {
 
+    private boolean onlineModeSelected;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,16 +37,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initModeSelection() {
+        updateModeSelectionUi();
         findViewById(R.id.mode_offline).setOnClickListener(v -> {
-            // already in offline/single-player mode, no action needed
+            onlineModeSelected = false;
+            updateModeSelectionUi();
+            Toast.makeText(this, R.string.mode_offline_selected, Toast.LENGTH_SHORT).show();
         });
         findViewById(R.id.mode_online).setOnClickListener(v ->
-                Toast.makeText(this, R.string.mode_online_unavailable, Toast.LENGTH_SHORT).show());
+        {
+            onlineModeSelected = true;
+            updateModeSelectionUi();
+            Toast.makeText(this, R.string.mode_online_selected, Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void launchGame(String difficulty) {
+        if (onlineModeSelected) {
+            Intent onlineIntent = new Intent(this, OnlineGameActivity.class);
+            onlineIntent.putExtra(GameDifficulty.EXTRA_DIFFICULTY, difficulty);
+            startActivity(onlineIntent);
+            return;
+        }
         Intent intent = new Intent(this, GameActivity.class);
         intent.putExtra(GameDifficulty.EXTRA_DIFFICULTY, difficulty);
         startActivity(intent);
+    }
+
+    private void updateModeSelectionUi() {
+        findViewById(R.id.mode_offline).setAlpha(onlineModeSelected ? 0.45f : 1f);
+        findViewById(R.id.mode_online).setAlpha(onlineModeSelected ? 1f : 0.45f);
     }
 }

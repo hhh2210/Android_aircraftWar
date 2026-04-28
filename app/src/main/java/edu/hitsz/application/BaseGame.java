@@ -78,6 +78,13 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
 
     private String floatingNotice;
     private long floatingNoticeExpireAt;
+    private volatile boolean onlineHudEnabled;
+    private volatile boolean onlineGameplayReady = true;
+    private volatile int opponentScore;
+    private volatile boolean opponentAlive;
+    private volatile String onlineStatusText;
+    private volatile ScoreSyncListener scoreSyncListener;
+    private int lastReportedScore;
 
     private HeroAircraft heroAircraft;
     private final List<AbstractAircraft> enemyAircrafts = new LinkedList<>();
@@ -201,7 +208,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
     public void run() {
         while (running) {
             long start = System.currentTimeMillis();
-            if (initialized && !gameOver) {
+            if (initialized && !gameOver && (!onlineHudEnabled || onlineGameplayReady)) {
                 updateGame();
             }
             drawFrame();
@@ -244,6 +251,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         aircraftsMoveAction();
         crashCheckAction();
         postProcessAction();
+        publishScoreIfNeeded();
 
         if (heroAircraft.getHp() <= 0) {
             gameOver = true;
@@ -486,6 +494,14 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         floatingNoticeExpireAt = System.currentTimeMillis() + durationMs;
     }
 
+    private void publishScoreIfNeeded() {
+        if (!onlineHudEnabled || !onlineGameplayReady || scoreSyncListener == null || score == lastReportedScore) {
+            return;
+        }
+        lastReportedScore = score;
+        scoreSyncListener.onScoreChanged(score);
+    }
+
     private void drawFrame() {
         Canvas canvas = surfaceHolder.lockCanvas();
         if (canvas == null) {
@@ -549,6 +565,18 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         canvas.drawText("SCORE: " + score, 24f, 64f, hudPaint);
         canvas.drawText("LIFE: " + heroAircraft.getHp(), 24f, 124f, hudPaint);
         canvas.drawText(gameMode.getClass().getSimpleName().replace("Mode", ""), 24f, 184f, hudPaint);
+        if (onlineHudEnabled) {
+            String opponentState = opponentAlive
+                    ? getResources().getString(edu.hitsz.R.string.online_alive)
+                    : getResources().getString(edu.hitsz.R.string.online_dead);
+            canvas.drawText(getResources().getString(edu.hitsz.R.string.online_label_opponent_score) + ": " + opponentScore,
+                    24f, 244f, hudPaint);
+            canvas.drawText(getResources().getString(edu.hitsz.R.string.online_label_opponent_status) + ": " + opponentState,
+                    24f, 304f, hudPaint);
+            String statusText = onlineStatusText == null ? "" : onlineStatusText;
+            canvas.drawText(getResources().getString(edu.hitsz.R.string.online_label_status) + ": " + statusText,
+                    24f, 364f, hudPaint);
+        }
     }
 
     private void drawFloatingNotice(Canvas canvas) {
@@ -579,7 +607,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
         }
         initializeGameIfNeeded();
         audioManager.preloadEffects();
-        if (!gameOver) {
+        if (!gameOver && (!onlineHudEnabled || onlineGameplayReady)) {
             if (bossExists) {
                 audioManager.startBossBgm();
             } else {
@@ -619,7 +647,7 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     public void onHostResume() {
-        if (initialized && !gameOver) {
+        if (initialized && !gameOver && (!onlineHudEnabled || onlineGameplayReady)) {
             if (bossExists) {
                 audioManager.startBossBgm();
             } else {
@@ -634,5 +662,46 @@ public class BaseGame extends SurfaceView implements SurfaceHolder.Callback, Run
             heroAircraft.stopPropEffectTimer();
         }
         audioManager.release();
+    }
+
+    public void attachOnlineScoreSyncListener(ScoreSyncListener listener) {
+        onlineHudEnabled = true;
+        onlineGameplayReady = false;
+        opponentAlive = false;
+        onlineStatusText = "";
+        scoreSyncListener = listener;
+        lastReportedScore = score;
+    }
+
+    public void setOnlineGameplayReady(boolean ready) {
+        onlineHudEnabled = true;
+        onlineGameplayReady = ready;
+        if (ready) {
+            onHostResume();
+        } else {
+            audioManager.pauseAll();
+        }
+    }
+
+    public void updateOnlineState(int latestOpponentScore, boolean latestOpponentAlive, String statusText) {
+        onlineHudEnabled = true;
+        opponentScore = latestOpponentScore;
+        opponentAlive = latestOpponentAlive;
+        onlineStatusText = statusText == null ? "" : statusText;
+    }
+
+    public void updateOnlineStatus(String statusText) {
+        onlineHudEnabled = true;
+        onlineStatusText = statusText == null ? "" : statusText;
+    }
+
+    public void stopOnlineSession() {
+        onlineHudEnabled = true;
+        onlineGameplayReady = false;
+        audioManager.pauseAll();
+    }
+
+    public interface ScoreSyncListener {
+        void onScoreChanged(int score);
     }
 }
