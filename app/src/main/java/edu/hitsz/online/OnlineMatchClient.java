@@ -10,8 +10,8 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.Queue;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public class OnlineMatchClient implements Closeable {
 
@@ -19,18 +19,21 @@ public class OnlineMatchClient implements Closeable {
     public static final String PHASE_RESULT = "RESULT";
 
     private static final int CONNECT_TIMEOUT_MS = 5000;
+    private static final String CLOSE_MARKER = "__ONLINE_MATCH_CLIENT_CLOSE__";
+    private static final String QUIT_MESSAGE = "QUIT";
 
     private final String host;
     private final int port;
     private final String difficulty;
     private final Listener listener;
-    private final Object sendLock = new Object();
-    private final Queue<String> pendingMessages = new ArrayDeque<>();
+    private final Object lifecycleLock = new Object();
+    private final BlockingDeque<String> sendQueue = new LinkedBlockingDeque<>();
 
     private Socket socket;
     private BufferedReader reader;
     private PrintWriter writer;
     private Thread readThread;
+    private Thread sendThread;
     private volatile boolean closed;
 
     public OnlineMatchClient(String host, int port, String difficulty, Listener listener) {
@@ -55,14 +58,18 @@ public class OnlineMatchClient implements Closeable {
 
     private void runClient() {
         try {
-            socket = new Socket();
-            socket.connect(new InetSocketAddress(host, port), CONNECT_TIMEOUT_MS);
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            Socket connectedSocket = new Socket();
+            socket = connectedSocket;
+            connectedSocket.connect(new InetSocketAddress(host, port), CONNECT_TIMEOUT_MS);
+            reader = new BufferedReader(new InputStreamReader(connectedSocket.getInputStream(), StandardCharsets.UTF_8));
             writer = new PrintWriter(new BufferedWriter(
-                    new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)), true);
+                    new OutputStreamWriter(connectedSocket.getOutputStream(), StandardCharsets.UTF_8)), true);
+            if (closed) {
+                return;
+            }
+            sendQueue.offerFirst("JOIN|" + difficulty);
+            startSender();
             listener.onConnected();
-            sendLine("JOIN|" + difficulty);
-            flushPendingMessages();
             String line;
             while (!closed && (line = reader.readLine()) != null) {
                 ServerMessage message = parseServerMessage(line);
@@ -76,7 +83,7 @@ public class OnlineMatchClient implements Closeable {
                 listener.onDisconnected(exception.getMessage());
             }
         } finally {
-            closeSilently();
+            closeFromRemote();
         }
     }
 
@@ -114,31 +121,75 @@ public class OnlineMatchClient implements Closeable {
     }
 
     private void sendLine(String line) {
-        synchronized (sendLock) {
-            if (writer == null) {
-                pendingMessages.offer(line);
-                return;
+        if (closed) {
+            return;
+        }
+        sendQueue.offer(line);
+    }
+
+    private void startSender() {
+        sendThread = new Thread(this::runSender, "online-match-sender");
+        sendThread.start();
+    }
+
+    private void runSender() {
+        try {
+            while (true) {
+                String line = sendQueue.take();
+                if (CLOSE_MARKER.equals(line)) {
+                    return;
+                }
+                writeLineDirect(line);
+                if (QUIT_MESSAGE.equals(line)) {
+                    return;
+                }
             }
-            writer.println(line);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+        } finally {
+            closeSilently();
         }
     }
 
-    private void flushPendingMessages() {
-        synchronized (sendLock) {
-            while (writer != null && !pendingMessages.isEmpty()) {
-                writer.println(pendingMessages.poll());
-            }
+    private void writeLineDirect(String line) {
+        PrintWriter currentWriter = writer;
+        if (currentWriter == null) {
+            return;
         }
+        currentWriter.println(line);
     }
 
     @Override
     public void close() {
-        if (closed) {
+        if (!markClosed()) {
             return;
         }
-        closed = true;
-        sendLine("QUIT");
+        if (sendThread == null) {
+            closeSilently();
+            sendQueue.offer(CLOSE_MARKER);
+            return;
+        }
+        sendQueue.clear();
+        sendQueue.offer(QUIT_MESSAGE);
+    }
+
+    private void closeFromRemote() {
+        if (!markClosed()) {
+            return;
+        }
+        sendQueue.clear();
+        sendQueue.offer(CLOSE_MARKER);
         closeSilently();
+    }
+
+    private boolean markClosed() {
+        synchronized (lifecycleLock) {
+            if (closed) {
+                return false;
+            }
+            closed = true;
+            return true;
+        }
     }
 
     private void closeSilently() {

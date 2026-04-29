@@ -4,15 +4,12 @@ import android.app.Activity;
 import android.app.Instrumentation;
 
 import androidx.test.core.app.ActivityScenario;
-import androidx.test.espresso.action.ViewActions;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -34,12 +31,33 @@ public class MainActivityNavigationTest {
         assertLaunchesDifficulty(R.id.button_hard, GameDifficulty.HARD);
     }
 
+    @Test
+    public void onlineModeLaunchesOnlineGameActivityWithSelectedDifficulty() {
+        Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(
+                OnlineGameActivity.class.getName(), null, false);
+
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            scenario.onActivity(activity -> {
+                activity.findViewById(R.id.mode_online).performClick();
+                activity.findViewById(R.id.button_easy).performClick();
+            });
+
+            Activity activity = instrumentation.waitForMonitorWithTimeout(monitor, 5000);
+            assertNotNull(activity);
+            assertEquals(GameDifficulty.EASY, activity.getIntent().getStringExtra(GameDifficulty.EXTRA_DIFFICULTY));
+            activity.finish();
+        } finally {
+            instrumentation.removeMonitor(monitor);
+        }
+    }
+
     private void assertLaunchesDifficulty(int buttonId, String expectedDifficulty) {
         Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
         Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(GameActivity.class.getName(), null, false);
 
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-            onView(withId(buttonId)).perform(ViewActions.click());
+            scenario.onActivity(activity -> activity.findViewById(buttonId).performClick());
 
             Activity activity = instrumentation.waitForMonitorWithTimeout(monitor, 5000);
             assertNotNull(activity);

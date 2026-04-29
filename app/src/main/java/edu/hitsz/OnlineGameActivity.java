@@ -16,20 +16,25 @@ import edu.hitsz.application.EasyGame;
 import edu.hitsz.application.HardGame;
 import edu.hitsz.application.NormalGame;
 import edu.hitsz.online.OnlineMatchClient;
+import edu.hitsz.rank.RankActivity;
+import edu.hitsz.rank.RankDbHelper;
+import edu.hitsz.rank.RankSaveDialog;
 
 public class OnlineGameActivity extends AppCompatActivity {
 
     // Replace this with the server machine's LAN IP when testing on real devices.
     public static final String SERVER_HOST = "10.0.2.2";
     public static final int EASY_PORT = 9999;
-    public static final int NORMAL_PORT = 10000;
+    public static final int NORMAL_PORT = 12000;
     public static final int HARD_PORT = 10001;
 
     private static final int MSG_GAME_OVER = 1;
 
     private BaseGame gameView;
     private OnlineMatchClient matchClient;
-    private int localPlayerIndex;
+    private RankDbHelper rankDbHelper;
+    private String currentDifficulty;
+    private volatile int localPlayerIndex;
     private boolean localGameOverSent;
     private boolean terminalDialogShown;
 
@@ -38,10 +43,11 @@ public class OnlineGameActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        String difficulty = normalizeDifficulty(getIntent().getStringExtra(GameDifficulty.EXTRA_DIFFICULTY));
-        int port = portForDifficulty(difficulty);
+        currentDifficulty = normalizeDifficulty(getIntent().getStringExtra(GameDifficulty.EXTRA_DIFFICULTY));
+        int port = portForDifficulty(currentDifficulty);
+        rankDbHelper = new RankDbHelper(getApplicationContext());
 
-        gameView = createGameViewByDifficulty(difficulty);
+        gameView = createGameViewByDifficulty(currentDifficulty);
         gameView.attachOnlineScoreSyncListener(score -> {
             if (matchClient != null) {
                 matchClient.sendScore(score);
@@ -51,15 +57,15 @@ public class OnlineGameActivity extends AppCompatActivity {
         gameView.updateOnlineState(0, false, getString(R.string.online_status_connecting));
         setContentView(gameView);
 
-        matchClient = new OnlineMatchClient(SERVER_HOST, port, difficulty, new OnlineMatchClient.Listener() {
+        matchClient = new OnlineMatchClient(SERVER_HOST, port, currentDifficulty, new OnlineMatchClient.Listener() {
             @Override
             public void onConnected() {
-                runOnUiThread(() -> gameView.updateOnlineStatus(getString(R.string.online_status_waiting)));
+                runOnUiThreadIfAlive(() -> gameView.updateOnlineStatus(getString(R.string.online_status_waiting)));
             }
 
             @Override
             public void onWaiting(String matchDifficulty) {
-                runOnUiThread(() -> {
+                runOnUiThreadIfAlive(() -> {
                     gameView.setOnlineGameplayReady(false);
                     gameView.updateOnlineState(0, false, getString(R.string.online_status_waiting));
                 });
@@ -67,7 +73,7 @@ public class OnlineGameActivity extends AppCompatActivity {
 
             @Override
             public void onMatched(String matchDifficulty, String roomId) {
-                runOnUiThread(() -> gameView.updateOnlineStatus(getString(R.string.online_status_matched)));
+                runOnUiThreadIfAlive(() -> gameView.updateOnlineStatus(getString(R.string.online_status_matched)));
             }
 
             @Override
@@ -77,17 +83,17 @@ public class OnlineGameActivity extends AppCompatActivity {
 
             @Override
             public void onStateUpdate(OnlineMatchClient.ServerState state) {
-                runOnUiThread(() -> applyServerState(state));
+                runOnUiThreadIfAlive(() -> applyServerState(state));
             }
 
             @Override
             public void onResult(int playerOneScore, int playerTwoScore) {
-                runOnUiThread(() -> showResultDialog(playerOneScore, playerTwoScore));
+                runOnUiThreadIfAlive(() -> showResultDialog(playerOneScore, playerTwoScore));
             }
 
             @Override
             public void onPeerLeft() {
-                runOnUiThread(() -> showTerminalDialog(
+                runOnUiThreadIfAlive(() -> showTerminalDialog(
                         getString(R.string.online_status_peer_left),
                         getString(R.string.online_status_peer_left)
                 ));
@@ -95,7 +101,7 @@ public class OnlineGameActivity extends AppCompatActivity {
 
             @Override
             public void onDisconnected(String reason) {
-                runOnUiThread(() -> {
+                runOnUiThreadIfAlive(() -> {
                     if (!terminalDialogShown) {
                         showTerminalDialog(
                                 getString(R.string.online_status_connection_failed, safeReason(reason)),
@@ -107,7 +113,7 @@ public class OnlineGameActivity extends AppCompatActivity {
 
             @Override
             public void onError(String message) {
-                runOnUiThread(() -> {
+                runOnUiThreadIfAlive(() -> {
                     if (!terminalDialogShown) {
                         showTerminalDialog(
                                 getString(R.string.online_status_error, safeReason(message)),
@@ -140,9 +146,15 @@ public class OnlineGameActivity extends AppCompatActivity {
     protected void onDestroy() {
         if (matchClient != null) {
             matchClient.close();
+            matchClient = null;
         }
         if (gameView != null) {
             gameView.releaseResources();
+            gameView = null;
+        }
+        if (rankDbHelper != null) {
+            rankDbHelper.close();
+            rankDbHelper = null;
         }
         super.onDestroy();
     }
@@ -160,7 +172,7 @@ public class OnlineGameActivity extends AppCompatActivity {
     }
 
     private boolean handleGameMessage(Message message) {
-        if (message.what != MSG_GAME_OVER || isFinishing() || isDestroyed()) {
+        if (message.what != MSG_GAME_OVER || !isUiAlive()) {
             return true;
         }
         int score = message.arg1;
@@ -203,7 +215,7 @@ public class OnlineGameActivity extends AppCompatActivity {
     }
 
     private void showResultDialog(int playerOneScore, int playerTwoScore) {
-        if (terminalDialogShown || isFinishing() || isDestroyed()) {
+        if (terminalDialogShown || !isUiAlive()) {
             return;
         }
         terminalDialogShown = true;
@@ -217,15 +229,23 @@ public class OnlineGameActivity extends AppCompatActivity {
                 .setMessage(getString(R.string.online_result_message, selfScore, opponentScore))
                 .setCancelable(false)
                 .setPositiveButton(R.string.online_result_confirm, (dialog, which) -> {
-                    finish();
-                    startActivity(new Intent(this, MainActivity.class)
-                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+                    showUsernameDialog(selfScore);
                 })
                 .show();
     }
 
+    private void showUsernameDialog(int score) {
+        if (!isUiAlive() || rankDbHelper == null) {
+            return;
+        }
+        RankSaveDialog.show(this, rankDbHelper, score, currentDifficulty, () -> {
+            startActivity(new Intent(this, RankActivity.class));
+            finish();
+        });
+    }
+
     private void showTerminalDialog(String title, String statusText) {
-        if (terminalDialogShown || isFinishing() || isDestroyed()) {
+        if (terminalDialogShown || !isUiAlive()) {
             return;
         }
         terminalDialogShown = true;
@@ -264,4 +284,17 @@ public class OnlineGameActivity extends AppCompatActivity {
         }
         return reason;
     }
+
+    private void runOnUiThreadIfAlive(Runnable action) {
+        runOnUiThread(() -> {
+            if (isUiAlive()) {
+                action.run();
+            }
+        });
+    }
+
+    private boolean isUiAlive() {
+        return gameView != null && !isFinishing() && !isDestroyed();
+    }
+
 }
